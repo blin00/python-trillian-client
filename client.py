@@ -176,6 +176,7 @@ def main():
     parser.add_argument('--benchmark', action='store_true', help='benchmark')
     parser.add_argument('--append', action='store_true', help='append a random entry')
     parser.add_argument('--test', action='store_true', help='test inclusion proofs')
+    parser.add_argument('--read', action='store_true', help='read all entries')
     args = parser.parse_args()
 
     client = TrillianLogClient('localhost:8090', reset=args.reset)
@@ -187,7 +188,7 @@ def main():
             leaves = (LogLeaf(leaf_value=os.urandom(32)) for _ in range(10000))
             client.append_batch(leaves)
         diff = time.time() - start
-        print('{} sec'.format(diff))
+        print('write: {} sec'.format(diff))
     elif args.append:
         leaf = LogLeaf(leaf_value=os.urandom(32))
         root = client.get_and_verify_root()
@@ -204,7 +205,16 @@ def main():
         # but w/e
         client.verify_inclusion(root, leaf)
     if args.test:
+        start = time.time()
         client.test_inclusion_proofs()
+        diff = time.time() - start
+        print('{} sec'.format(diff))
+    if args.read:
+        root = client.get_and_verify_root()
+        start = time.time()
+        result = client.get_all_entries(root)
+        diff = time.time() - start
+        print('read {} entries in {} sec'.format(len(result), diff))
 
     print(client.get_and_verify_root())
 
